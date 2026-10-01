@@ -2,6 +2,7 @@ const userSelect = document.getElementById("userSelect");
 const currentRoles = document.getElementById("currentRoles");
 const roleSelect = document.getElementById("roleSelect");
 const removeRoleSelect = document.getElementById("removeRoleSelect");
+const API_BASE = "http://localhost:5107";
 
 const assignBtn = document.getElementById("assignBtn");
 const removeBtn = document.getElementById("removeBtn");
@@ -10,13 +11,13 @@ const message = document.getElementById("message");
 
 // ID admin demo hiện tại
 const currentAdminId =
-    "3c4e28b3-8acf-4662-9da7-87ef223e6273";
+    "76ebb154-61c0-48e9-bfc2-0ce546c4e4f5";
 
 
 // Load danh sách user
 async function loadUsers() {
     try {
-        const response = await fetch("/api/users");
+        const response = await fetch(`${API_BASE}/api/users`);
 
         const users = await response.json();
 
@@ -51,7 +52,7 @@ async function loadRoles() {
 
     try {
         const response =
-            await fetch(`/api/users/${userId}/roles`);
+            await fetch(`${API_BASE}/api/users/${userId}/roles`);
 
         const data = await response.json();
 
@@ -107,7 +108,7 @@ async function assignRole() {
     try {
 
         const response = await fetch(
-            `/api/users/${userId}/roles`,
+    `${API_BASE}/api/users/${userId}/roles`,
             {
                 method: "POST",
                 headers: {
@@ -167,7 +168,7 @@ async function removeRole() {
     try {
 
         const response = await fetch(
-            `/api/users/${userId}/roles/${roleName}?currentUserId=${currentAdminId}`,
+    `${API_BASE}/api/users/${userId}/roles/${roleName}?currentUserId=${currentAdminId}`,
             {
                 method: "DELETE"
             }
