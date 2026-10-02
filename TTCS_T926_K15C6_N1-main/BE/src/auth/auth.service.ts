@@ -40,6 +40,7 @@ export class AuthService {
     const payload = {
       sub: user.id,
       email: user.email,
+      tokenVersion: user.tokenVersion,
     };
 
     return {
@@ -71,6 +72,23 @@ export class AuthService {
     user.password = await bcrypt.hash(dto.newPassword, 10);
 
     await this.userRepository.save(user);
+
+    console.log('BEFORE TOKEN VERSION:', user.tokenVersion);
+
+    await this.userRepository.increment(
+      { id: user.id },
+      'tokenVersion',
+      1,
+    );
+
+    const updatedUser = await this.userRepository.findOne({
+      where: { id: user.id },
+    });
+
+    console.log(
+      'AFTER TOKEN VERSION:',
+      updatedUser?.tokenVersion,
+    );
 
     return {
       message: 'Đổi mật khẩu thành công',
