@@ -1,0 +1,36 @@
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+  "fullName": "Nguyen Van A",
+  "email": "nguyenvana@gmail.com",
+  "phone": "0987654321",
+  "role": "ADMIN"
+}
+
+###
+
+GET http://localhost:3000/users
+
+###
+
+GET http://localhost:3000/users?search=Nguyen
+
+###
+
+GET http://localhost:3000/users?role=ADMIN
+
+###
+
+GET http://localhost:3000/users?status=PENDING
+
+###
+
+PATCH http://localhost:3000/users/ID_THAT
+Content-Type: application/json
+
+{
+  "fullName": "Nguyen Van A Updated",
+  "phone": "0912345678",
+  "status": "ACTIVE"
+}
