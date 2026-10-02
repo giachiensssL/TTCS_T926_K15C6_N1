@@ -112,3 +112,21 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+## Account lock and handover
+
+The ASP.NET Core API uses Identity cookie sessions. The development seed account
+is `admin@test.com` / `Admin@123`; do not use these demo credentials outside
+Development. Apply pending EF Core migrations before running the API:
+
+```powershell
+dotnet ef database update
+```
+
+Sign in through `POST /api/auth/login`, then use the Admin-only endpoints
+documented in [AccountManagement.http](./AccountManagement.http). Locking an
+account requires a reason, writes an account-status audit entry, and invalidates
+existing Identity sessions by rotating the security stamp. The Admin account
+page displays assigned classes that require handover.
+Cookie-authenticated mutations require the antiforgery token returned by
+`GET /api/auth/csrf`; the frontend fetches and sends this token automatically.

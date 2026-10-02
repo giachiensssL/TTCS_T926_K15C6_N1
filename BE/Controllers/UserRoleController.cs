@@ -1,11 +1,14 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using UserRoleDemo.DTOs;
 using UserRoleDemo.Models;
 
 namespace UserRoleDemo.Controllers;
 
 [ApiController]
+[Authorize(Roles = "Admin")]
 [Route("api/users")]
 public class UserRoleController : ControllerBase
 {
@@ -20,25 +23,13 @@ public class UserRoleController : ControllerBase
         _roleManager = roleManager;
     }
 
-    // Xem danh sách user để lấy ID
-    [HttpGet]
-    public IActionResult GetUsers()
-    {
-        var users = _userManager.Users
-            .Select(x => new
-            {
-                x.Id,
-                x.Email
-            })
-            .ToList();
-
-        return Ok(users);
-    }
-
     // Xem các vai trò của một user
     [HttpGet("{userId}/roles")]
-    public async Task<IActionResult> GetRoles(string userId)
+    public async Task<IActionResult> GetRoles(
+        string userId,
+        CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var user = await _userManager.FindByIdAsync(userId);
 
         if (user == null)
@@ -56,10 +47,13 @@ public class UserRoleController : ControllerBase
 
     // Gán thêm vai trò
     [HttpPost("{userId}/roles")]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> AssignRole(
         string userId,
-        [FromBody] AssignRoleRequest request)
+        [FromBody] AssignRoleRequest request,
+        CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var user = await _userManager.FindByIdAsync(userId);
 
         if (user == null)
@@ -88,6 +82,10 @@ public class UserRoleController : ControllerBase
         if (!result.Succeeded)
             return BadRequest(result.Errors);
 
+        var stampResult = await _userManager.UpdateSecurityStampAsync(user);
+        if (!stampResult.Succeeded)
+            return BadRequest(stampResult.Errors);
+
         var roles =
             await _userManager.GetRolesAsync(user);
 
@@ -100,18 +98,20 @@ public class UserRoleController : ControllerBase
 
     // Thu hồi vai trò
     [HttpDelete("{userId}/roles/{roleName}")]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> RemoveRole(
         string userId,
         string roleName,
-        [FromQuery] string currentUserId)
+        CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var user = await _userManager.FindByIdAsync(userId);
 
         if (user == null)
             return NotFound("Không tìm thấy người dùng.");
 
         // Không cho Admin tự xóa role Admin của chính mình
-        if (currentUserId == userId &&
+        if (User.FindFirstValue(ClaimTypes.NameIdentifier) == userId &&
             roleName.Equals(
                 "Admin",
                 StringComparison.OrdinalIgnoreCase))
@@ -136,6 +136,10 @@ public class UserRoleController : ControllerBase
 
         if (!result.Succeeded)
             return BadRequest(result.Errors);
+
+        var stampResult = await _userManager.UpdateSecurityStampAsync(user);
+        if (!stampResult.Succeeded)
+            return BadRequest(stampResult.Errors);
 
         var roles =
             await _userManager.GetRolesAsync(user);

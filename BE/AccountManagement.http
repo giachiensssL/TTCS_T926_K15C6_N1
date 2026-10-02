@@ -1,0 +1,66 @@
+@baseUrl = http://localhost:5107
+@csrfToken = replace-with-token-from-csrf-response
+@staffUserId = replace-with-id-from-staff-list
+@classId = replace-with-id-from-create-response
+
+### Get an antiforgery request token (send it as X-CSRF-TOKEN on mutations)
+GET {{baseUrl}}/api/auth/csrf
+
+### Sign in as the development administrator
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+X-CSRF-TOKEN: {{csrfToken}}
+
+{
+  "email": "admin@test.com",
+  "password": "Admin@123"
+}
+
+### Check the current authenticated session
+GET {{baseUrl}}/api/auth/me
+
+### Get staff accounts and classes that need handover
+GET {{baseUrl}}/api/users
+
+### Lock a staff account (reason is required)
+PATCH {{baseUrl}}/api/users/{{staffUserId}}/lock
+Content-Type: application/json
+X-CSRF-TOKEN: {{csrfToken}}
+
+{
+  "reason": "Nhân sự đã nghỉ việc"
+}
+
+### Lock without a reason (expected 400 Bad Request)
+PATCH {{baseUrl}}/api/users/{{staffUserId}}/lock
+Content-Type: application/json
+X-CSRF-TOKEN: {{csrfToken}}
+
+{
+  "reason": "   "
+}
+
+### Unlock a staff account
+PATCH {{baseUrl}}/api/users/{{staffUserId}}/unlock
+X-CSRF-TOKEN: {{csrfToken}}
+
+### Unlock an unknown account (expected 404 Not Found)
+PATCH {{baseUrl}}/api/users/unknown-user-id/unlock
+X-CSRF-TOKEN: {{csrfToken}}
+
+### Create a class assignment to verify the handover warning
+POST {{baseUrl}}/api/users/classes
+Content-Type: application/json
+X-CSRF-TOKEN: {{csrfToken}}
+
+{
+  "name": "Lớp TMS-01",
+  "instructorUserId": "{{staffUserId}}"
+}
+
+### Read a created class
+GET {{baseUrl}}/api/users/classes/{{classId}}
+
+### Sign out
+POST {{baseUrl}}/api/auth/logout
+X-CSRF-TOKEN: {{csrfToken}}

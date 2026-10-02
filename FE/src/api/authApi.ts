@@ -1,12 +1,7 @@
 import axios, { AxiosError } from 'axios'
-
-const api = axios.create({
-  baseURL: '/api',
-  withCredentials: true, // send HttpOnly cookies
-})
+import { apiClient, resetCsrfToken } from './apiClient'
 
 export interface LoginResponse {
-  accessToken: string
   role: string
 }
 
@@ -17,15 +12,25 @@ export interface LoginLockedError {
 }
 
 export interface LoginInvalidError {
-  code: 'AUTH_INVALID_CREDENTIALS' | 'AUTH_ACCOUNT_DISABLED'
+  code: 'AUTH_INVALID_CREDENTIALS' | 'AUTH_ACCOUNT_DISABLED' | 'AUTH_ROLE_REQUIRED'
   message: string
 }
 
 export type LoginApiError = LoginLockedError | LoginInvalidError
 
 export async function loginApi(email: string, password: string): Promise<LoginResponse> {
-  const res = await api.post<LoginResponse>('/auth/login', { email, password })
+  const res = await apiClient.post<LoginResponse>('/auth/login', { email, password })
+  resetCsrfToken()
   return res.data
+}
+
+export async function getCurrentUserApi(): Promise<LoginResponse> {
+  const res = await apiClient.get<LoginResponse>('/auth/me')
+  return res.data
+}
+
+export async function logoutApi(): Promise<void> {
+  await apiClient.post('/auth/logout')
 }
 
 export function extractApiError(err: unknown): LoginApiError | null {

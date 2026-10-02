@@ -30,6 +30,8 @@ function validateFields(email: string, password: string): FieldErrors {
     errors.password = 'Vui lòng nhập mật khẩu.'
   } else if (password.length < 8) {
     errors.password = 'Mật khẩu phải có ít nhất 8 ký tự.'
+  } else if (password.length > 128) {
+    errors.password = 'Mật khẩu không được vượt quá 128 ký tự.'
   }
   return errors
 }
@@ -82,17 +84,21 @@ export function useLoginForm() {
       try {
         const data = await loginApi(email, password)
         const role = data.role as UserRole
-        setAuth(data.accessToken, role)
+        setAuth(role)
         const redirectParam = searchParams.get('redirect')
         const dest = redirectParam && redirectParam.startsWith('/') ? redirectParam : roleToPath[role]
         navigate(dest, { replace: true })
       } catch (err) {
         const apiErr = extractApiError(err)
         if (apiErr?.code === 'AUTH_ACCOUNT_LOCKED') {
-          const mins = Math.ceil(lockSecondsLeft / 60)
+          const mins = Math.max(1, Math.ceil((new Date(apiErr.lockedUntil).getTime() - Date.now()) / 60_000))
           setGlobalError(`Tài khoản tạm thời bị khoá. Vui lòng thử lại sau ${mins} phút.`)
           setIsLocked(true)
-          startCountdown((apiErr as { lockedUntil: string }).lockedUntil)
+          startCountdown(apiErr.lockedUntil)
+        } else if (apiErr?.code === 'AUTH_ACCOUNT_DISABLED') {
+          setGlobalError(apiErr.message)
+        } else if (apiErr?.code === 'AUTH_ROLE_REQUIRED') {
+          setGlobalError(apiErr.message)
         } else {
           setGlobalError('Email hoặc mật khẩu không đúng.')
         }

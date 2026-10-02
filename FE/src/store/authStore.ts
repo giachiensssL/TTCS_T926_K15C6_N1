@@ -11,17 +11,17 @@ export type UserRole =
   | 'GUEST'
 
 interface AuthState {
-  accessToken: string | null
   role: UserRole | null
-  setAuth: (token: string, role: UserRole) => void
+  isAuthenticated: boolean
+  setAuth: (role: UserRole) => void
   clearAuth: () => void
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  accessToken: null,
   role: null,
-  setAuth: (accessToken, role) => set({ accessToken, role }),
-  clearAuth: () => set({ accessToken: null, role: null }),
+  isAuthenticated: false,
+  setAuth: (role) => set({ role, isAuthenticated: true }),
+  clearAuth: () => set({ role: null, isAuthenticated: false }),
 }))
 
 export const roleToPath: Record<UserRole, string> = {

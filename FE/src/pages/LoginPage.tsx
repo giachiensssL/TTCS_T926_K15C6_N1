@@ -10,15 +10,15 @@ function formatCountdown(seconds: number): string {
 }
 
 export default function LoginPage() {
-  const token = useAuthStore((s) => s.accessToken)
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const role = useAuthStore((s) => s.role)
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (token && role) {
+    if (isAuthenticated && role) {
       navigate(roleToPath[role], { replace: true })
     }
-  }, [token, role, navigate])
+  }, [isAuthenticated, role, navigate])
 
   const {
     email, setEmail,
