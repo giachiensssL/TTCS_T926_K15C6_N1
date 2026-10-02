@@ -1,6 +1,7 @@
-import { useState, useRef, useCallback } from 'react'
+﻿import { useState, useRef, useCallback } from 'react'
 import { loginApi, extractApiError } from '../api/authApi'
-import { useAuthStore, roleToPath, UserRole } from '../store/authStore'
+import { useAuthStore, roleToPath } from '../store/authStore'
+import type { UserRole } from '../store/authStore'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 export interface FieldErrors {
@@ -8,28 +9,17 @@ export interface FieldErrors {
   password?: string
 }
 
-export interface FormState {
-  email: string
-  password: string
-  showPassword: boolean
-  fieldErrors: FieldErrors
-  globalError: string
-  isLoading: boolean
-  isLocked: boolean
-  lockSecondsLeft: number
-}
-
 function validateFields(email: string, password: string): FieldErrors {
   const errors: FieldErrors = {}
   if (!email.trim()) {
-    errors.email = 'Vui lòng nhập email.'
+    errors.email = 'Vui long nhap email.'
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    errors.email = 'Email không hợp lệ.'
+    errors.email = 'Email khong hop le.'
   }
   if (!password) {
-    errors.password = 'Vui lòng nhập mật khẩu.'
+    errors.password = 'Vui long nhap mat khau.'
   } else if (password.length < 8) {
-    errors.password = 'Mật khẩu phải có ít nhất 8 ký tự.'
+    errors.password = 'Mat khau phai co it nhat 8 ky tu.'
   }
   return errors
 }
@@ -52,7 +42,6 @@ export function useLoginForm() {
   const startCountdown = useCallback((lockedUntil: string) => {
     if (countdownRef.current) clearInterval(countdownRef.current)
     const endTime = new Date(lockedUntil).getTime()
-
     const tick = () => {
       const remaining = Math.ceil((endTime - Date.now()) / 1000)
       if (remaining <= 0) {
@@ -64,7 +53,6 @@ export function useLoginForm() {
         setLockSecondsLeft(remaining)
       }
     }
-
     tick()
     countdownRef.current = setInterval(tick, 1000)
   }, [])
@@ -73,11 +61,9 @@ export function useLoginForm() {
     async (e: React.FormEvent) => {
       e.preventDefault()
       setGlobalError('')
-
       const errors = validateFields(email, password)
       setFieldErrors(errors)
       if (Object.keys(errors).length > 0) return
-
       setIsLoading(true)
       try {
         const data = await loginApi(email, password)
@@ -89,12 +75,11 @@ export function useLoginForm() {
       } catch (err) {
         const apiErr = extractApiError(err)
         if (apiErr?.code === 'AUTH_ACCOUNT_LOCKED') {
-          const mins = Math.ceil(lockSecondsLeft / 60)
-          setGlobalError(`Tài khoản tạm thời bị khoá. Vui lòng thử lại sau ${mins} phút.`)
+          setGlobalError('Tai khoan tam thoi bi khoa. Vui long thu lai sau.')
           setIsLocked(true)
           startCountdown((apiErr as { lockedUntil: string }).lockedUntil)
         } else {
-          setGlobalError('Email hoặc mật khẩu không đúng.')
+          setGlobalError('Email hoac mat khau khong dung.')
         }
         setPassword('')
       } finally {
