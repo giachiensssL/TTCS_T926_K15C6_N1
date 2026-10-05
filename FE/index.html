@@ -1,63 +1,13 @@
-<!DOCTYPE html>
-<html lang="vi">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý vai trò người dùng</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-
-<body>
-
-    <div class="container">
-        <h1>Quản lý vai trò người dùng</h1>
-        <p class="subtitle">S1-09 - Gán và thu hồi vai trò</p>
-
-        <div class="card">
-            <label for="userSelect">Chọn người dùng</label>
-            <select id="userSelect">
-            <option value="">-- Chọn người dùng --</option>
-        </select>
-        </div>
-
-        <div class="card">
-            <h2>Vai trò hiện tại</h2>
-            <div id="currentRoles">
-                Chưa chọn người dùng
-            </div>
-        </div>
-
-        <div class="card">
-            <h2>Gán vai trò</h2>
-
-            <select id="roleSelect">
-            <option value="GiangVien">Giảng viên</option>
-            <option value="QuanLyDaoTao">Quản lý đào tạo</option>
-            <option value="Admin">Quản trị hệ thống</option>
-        </select>
-
-            <button id="assignBtn">
-            Gán vai trò
-        </button>
-        </div>
-
-        <div class="card">
-            <h2>Thu hồi vai trò</h2>
-
-            <select id="removeRoleSelect">
-        </select>
-
-            <button id="removeBtn" class="danger">
-            Thu hồi vai trò
-        </button>
-        </div>
-
-        <div id="message"></div>
-    </div>
-
-    <script src="app.js"></script>
-
-</body>
-
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>fe</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
