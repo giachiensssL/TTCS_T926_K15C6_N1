@@ -1,6 +1,6 @@
 import axios, { AxiosError } from 'axios'
 
-const api = axios.create({
+export const api = axios.create({
   baseURL: '/api',
   withCredentials: true, // send HttpOnly cookies
 })
