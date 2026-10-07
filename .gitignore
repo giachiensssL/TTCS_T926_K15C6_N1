@@ -24,3 +24,8 @@ BE/ttcsbackend/.env.*
 # ===== OS =====
 .DS_Store
 Thumbs.db
+
+# ===== Local .NET / Database build files =====
+BE/bin/
+BE/obj/
+*.db
