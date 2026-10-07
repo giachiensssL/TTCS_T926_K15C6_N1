@@ -1,0 +1,31 @@
+# ===== Java / Spring Boot =====
+BE/ttcsbackend/target/
+BE/ttcsbackend/.mvn/wrapper/maven-wrapper.jar
+
+# ===== Spring Boot secrets / local config =====
+BE/ttcsbackend/src/main/resources/application.properties
+
+# ===== Node / React / Vite =====
+FE/node_modules/
+FE/dist/
+FE/.vite/
+
+# ===== Environment files =====
+FE/.env
+FE/.env.*
+BE/ttcsbackend/.env
+BE/ttcsbackend/.env.*
+
+# ===== IDE =====
+.vscode/
+.idea/
+*.iml
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+
+# ===== Local .NET / Database build files =====
+BE/bin/
+BE/obj/
+*.db
