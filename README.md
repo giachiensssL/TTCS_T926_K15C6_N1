@@ -31,8 +31,26 @@ Hệ thống học trực tuyến LMS phức tạp (không phát video trực tu
 Chat trực tiếp thời gian thực, tích hợp SSO doanh nghiệp (LDAP) và xuất hóa đơn điện tử VAT.
 5. Kiến trúc kỹ thuật & Công nghệ sử dụng
 Frontend: React, TypeScript, Tailwind CSS (giao diện tối ưu đa thiết bị, hỗ trợ hiển thị di động từ 360px).
-Backend: Spring Boot (Java) hoặc NestJS (TypeScript), kiến trúc phân lớp chuẩn RESTful APIs.
+Backend: NestJS (TypeScript), kiến trúc phân lớp chuẩn RESTful APIs.
 Cơ sở dữ liệu: PostgreSQL (đảm bảo tính toàn vẹn dữ liệu, giao dịch ACID và các ràng buộc khóa ngoại chặt chẽ).
 Bảo mật & Phiên làm việc: JSON Web Tokens (Access Token + Refresh Token), mật khẩu mã hóa chuẩn bcrypt, kiểm soát truy cập phân tầng (Role-Based Access Control) tại Server Endpoint.
 Lưu trữ & Dịch vụ ngoài: Hệ thống lưu trữ đối tượng (S3-compatible) cho bài tập và slide bài giảng; hàng đợi gửi mail bất đồng bộ qua SMTP.
 Quản lý dự án & Quy trình phát triển: Agile/Scrum (8 tuần, 8 Sprints, 75 User Stories, 350 Story Points) quản lý qua Jira và mã nguồn kiểm soát theo Git Flow.
+
+## Chạy thử hồ sơ cá nhân (EP-01)
+
+Yêu cầu Node.js 20 trở lên. Mở hai terminal tại thư mục dự án:
+
+```powershell
+cd .\BE
+npm install
+npm run start:dev
+```
+
+```powershell
+cd .\FE
+npm install
+npm run dev
+```
+
+Mở `http://localhost:5173`. FE chuyển tiếp `/api` tới NestJS ở cổng `3000`. Hồ sơ hiện là dữ liệu minh họa lưu trong bộ nhớ và được đặt lại khi backend khởi động lại.

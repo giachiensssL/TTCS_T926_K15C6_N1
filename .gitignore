@@ -1,9 +1,8 @@
-# ===== Java / Spring Boot =====
-BE/ttcsbackend/target/
-BE/ttcsbackend/.mvn/wrapper/maven-wrapper.jar
-
-# ===== Spring Boot secrets / local config =====
-BE/ttcsbackend/src/main/resources/application.properties
+# ===== NestJS =====
+BE/node_modules/
+BE/dist/
+BE/.env
+BE/.env.*
 
 # ===== Node / React / Vite =====
 FE/node_modules/
@@ -13,8 +12,6 @@ FE/.vite/
 # ===== Environment files =====
 FE/.env
 FE/.env.*
-BE/ttcsbackend/.env
-BE/ttcsbackend/.env.*
 
 # ===== IDE =====
 .vscode/
