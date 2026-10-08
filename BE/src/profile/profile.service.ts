@@ -8,6 +8,7 @@ export interface Profile {
   dateOfBirth: string
   address: string
   role: string
+  avatar: string
 }
 
 @Injectable()
@@ -19,6 +20,7 @@ export class ProfileService {
     dateOfBirth: '2001-08-15',
     address: 'Quận 1, TP. Hồ Chí Minh',
     role: 'Học viên',
+    avatar: '',
   }
 
   getProfile(): Profile {
@@ -37,4 +39,25 @@ export class ProfileService {
 
     return this.getProfile()
   }
+  updateAvatar(
+  avatar: string,
+  mimeType: string,
+  size: number,
+): Profile {
+  if (!avatar) {
+    throw new BadRequestException('Vui lòng chọn ảnh đại diện.')
+  }
+
+  if (!['image/jpeg', 'image/png'].includes(mimeType)) {
+    throw new BadRequestException('Chỉ chấp nhận ảnh JPG hoặc PNG.')
+  }
+
+  if (size > 2 * 1024 * 1024) {
+    throw new BadRequestException('Ảnh không được vượt quá 2MB.')
+  }
+
+  this.profile.avatar = avatar
+
+  return this.getProfile()
+}
 }

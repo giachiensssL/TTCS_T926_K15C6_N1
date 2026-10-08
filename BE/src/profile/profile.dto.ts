@@ -5,6 +5,8 @@ import {
   IsString,
   Matches,
   MaxLength,
+  IsInt,
+  Max,
 } from 'class-validator'
 
 const trimString = ({ value }: { value: unknown }): unknown =>
@@ -36,4 +38,20 @@ export class UpdateProfileDto {
   @IsString()
   @MaxLength(255, { message: 'Địa chỉ không được quá 255 ký tự.' })
   address?: string
+}
+export class UpdateAvatarDto {
+  @IsString()
+  avatar!: string
+
+  @IsString()
+  @Matches(/^(image\/jpeg|image\/png)$/, {
+    message: 'Chỉ chấp nhận ảnh JPG hoặc PNG.',
+  })
+  mimeType!: string
+
+  @IsInt()
+  @Max(2 * 1024 * 1024, {
+    message: 'Ảnh không được vượt quá 2MB.',
+  })
+  size!: number
 }
