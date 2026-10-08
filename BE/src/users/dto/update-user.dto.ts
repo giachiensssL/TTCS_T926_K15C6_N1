@@ -1,7 +1,6 @@
 import {
   IsEmail,
   IsEnum,
-  IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
@@ -9,23 +8,25 @@ import {
 
 import { UserRole, UserStatus } from '../user.entity';
 
-export class CreateUserDto {
-  @IsNotEmpty()
+export class UpdateUserDto {
+  @IsOptional()
   @IsString()
   @MaxLength(150)
-  fullName: string;
+  fullName?: string;
 
+  @IsOptional()
   @IsEmail()
   @MaxLength(255)
-  email: string;
+  email?: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(20)
   phone?: string;
 
+  @IsOptional()
   @IsEnum(UserRole)
-  role: UserRole;
+  role?: UserRole;
 
   @IsOptional()
   @IsEnum(UserStatus)

@@ -3,109 +3,99 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { randomBytes } from 'crypto';
+import { DataSource, QueryFailedError, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
 import { User, UserStatus } from './user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
+import { ListUsersQueryDto } from './dto/list-users-query.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { UsersMailerService } from './users-mailer.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly dataSource: DataSource,
+    private readonly usersMailer: UsersMailerService,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
     const email = createUserDto.email.toLowerCase().trim();
+    const temporaryPassword = this.generateTemporaryPassword();
 
-    const existingUser = await this.userRepository.findOne({
-      where: { email },
-    });
+    try {
+      return await this.dataSource.transaction(async (manager) => {
+        const users = manager.getRepository(User);
+        const existingUser = await users.findOne({ where: { email } });
 
-    if (existingUser) {
-      throw new ConflictException(
-        'Email đã tồn tại trong hệ thống',
-      );
+        if (existingUser) {
+          throw new ConflictException('Email đã tồn tại trong hệ thống');
+        }
+
+        const user = users.create({
+          fullName: createUserDto.fullName,
+          email,
+          phone: createUserDto.phone,
+          role: createUserDto.role,
+          password: await bcrypt.hash(temporaryPassword, 10),
+          status: createUserDto.status ?? UserStatus.PENDING,
+          mustChangePassword: true,
+        });
+        const savedUser = await users.save(user);
+
+        await this.usersMailer.sendActivationEmail(
+          savedUser.email,
+          savedUser.fullName,
+          temporaryPassword,
+        );
+
+        return {
+          message: 'Tạo tài khoản và gửi email kích hoạt thành công',
+          user: this.toSafeUser(savedUser),
+        };
+      });
+    } catch (error) {
+      if (
+        error instanceof QueryFailedError &&
+        (error.driverError as { code?: string }).code === '23505'
+      ) {
+        throw new ConflictException('Email đã tồn tại trong hệ thống');
+      }
+      throw error;
     }
-
-    const temporaryPassword =
-      this.generateTemporaryPassword();
-
-    const hashedPassword = await bcrypt.hash(
-      temporaryPassword,
-      10,
-    );
-
-    const user = this.userRepository.create({
-      ...createUserDto,
-      email,
-      password: hashedPassword,
-      status:
-        createUserDto.status ?? UserStatus.PENDING,
-      mustChangePassword: true,
-    });
-
-    const savedUser =
-      await this.userRepository.save(user);
-
-    return {
-      message: 'Tạo tài khoản thành công',
-      user: {
-        id: savedUser.id,
-        fullName: savedUser.fullName,
-        email: savedUser.email,
-        phone: savedUser.phone,
-        role: savedUser.role,
-        status: savedUser.status,
-        mustChangePassword:
-          savedUser.mustChangePassword,
-      },
-      temporaryPassword,
-    };
   }
 
-  async findAll(
-    search?: string,
-    role?: string,
-    status?: string,
-    page = 1,
-    limit = 20,
-  ) {
+  async findAll(queryParams: ListUsersQueryDto) {
     const query =
       this.userRepository.createQueryBuilder('user');
 
-    if (search) {
+    const { search, role, status, page = 1, limit = 20 } = queryParams;
+
+    if (search?.trim()) {
       query.andWhere(
         '(LOWER(user.fullName) LIKE LOWER(:search) ' +
           'OR LOWER(user.email) LIKE LOWER(:search) ' +
           'OR user.phone LIKE :search)',
         {
-          search: `%${search}%`,
+          search: `%${search.trim()}%`,
         },
       );
     }
 
     if (role) {
-      query.andWhere(
-        'user.role = :role',
-        { role },
-      );
+      query.andWhere('user.role = :role', { role });
     }
 
     if (status) {
-      query.andWhere(
-        'user.status = :status',
-        { status },
-      );
+      query.andWhere('user.status = :status', { status });
     }
 
-    const currentPage =
-      Number(page) > 0 ? Number(page) : 1;
-
-    const pageSize =
-      Number(limit) > 0 ? Number(limit) : 20;
+    const currentPage = page;
+    const pageSize = limit;
 
     const [users, total] = await query
       .orderBy('user.createdAt', 'DESC')
@@ -113,12 +103,8 @@ export class UsersService {
       .take(pageSize)
       .getManyAndCount();
 
-    const safeUsers = users.map(
-      ({ password, ...user }) => user,
-    );
-
     return {
-      data: safeUsers,
+      data: users.map((user) => this.toSafeUser(user)),
       pagination: {
         page: currentPage,
         limit: pageSize,
@@ -132,7 +118,7 @@ export class UsersService {
 
   async update(
     id: string,
-    updateData: Partial<CreateUserDto>,
+    updateData: UpdateUserDto,
   ) {
     const user = await this.userRepository.findOne({
       where: { id },
@@ -148,10 +134,7 @@ export class UsersService {
       const email =
         updateData.email.toLowerCase().trim();
 
-      const existingUser =
-        await this.userRepository.findOne({
-          where: { email },
-        });
+      const existingUser = await this.userRepository.findOne({ where: { email } });
 
       if (
         existingUser &&
@@ -184,19 +167,18 @@ export class UsersService {
     const savedUser =
       await this.userRepository.save(user);
 
-    const { password, ...safeUser } = savedUser;
-
     return {
       message: 'Cập nhật tài khoản thành công',
-      user: safeUser,
+      user: this.toSafeUser(savedUser),
     };
   }
 
   private generateTemporaryPassword(): string {
-    const random = Math.random()
-      .toString(36)
-      .slice(-8);
+    return `Tms@${randomBytes(12).toString('base64url')}`;
+  }
 
-    return `Tms@${random}`;
+  private toSafeUser(user: User): Omit<User, 'password'> {
+    const { password: _password, ...safeUser } = user;
+    return safeUser;
   }
 }
