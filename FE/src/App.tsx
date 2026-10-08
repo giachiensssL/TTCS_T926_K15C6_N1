@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import './App.css'
+import { TrainingPrograms } from './components/TrainingPrograms'
 
 type Account = {
   id: number
@@ -29,6 +30,7 @@ const emptyForm: AccountForm = {
 }
 
 function App() {
+  const [currentTab, setCurrentTab] = useState<'programs' | 'users'>('programs')
   const [accounts, setAccounts] = useState<Account[]>([])
   const [username, setUsername] = useState('')
   const [role, setRole] = useState('')
@@ -204,20 +206,39 @@ function App() {
     <div className="app">
       <header className="header">
         <div>
-          <h1>Quản lý người dùng</h1>
-          <p>Quản lý tài khoản và phân quyền hệ thống</p>
+          <h1>Hệ Thống Quản Lý Đào Tạo (TMS)</h1>
+          <div className="top-nav">
+            <button
+              className={`tab-btn ${currentTab === 'programs' ? 'active' : ''}`}
+              onClick={() => setCurrentTab('programs')}
+            >
+              📚 Chương trình đào tạo
+            </button>
+            <button
+              className={`tab-btn ${currentTab === 'users' ? 'active' : ''}`}
+              onClick={() => setCurrentTab('users')}
+            >
+              👥 Quản lý người dùng
+            </button>
+          </div>
         </div>
 
-        <button
-          className="primary-button"
-          onClick={openCreateModal}
-        >
-          + Thêm tài khoản
-        </button>
+        {currentTab === 'users' && (
+          <button
+            className="primary-button"
+            onClick={openCreateModal}
+          >
+            + Thêm tài khoản
+          </button>
+        )}
       </header>
 
       <main className="container">
-        <section className="filter-card">
+        {currentTab === 'programs' ? (
+          <TrainingPrograms />
+        ) : (
+          <>
+            <section className="filter-card">
           <div className="filter-item search-item">
             <label>Tìm kiếm</label>
             <input
@@ -417,6 +438,8 @@ function App() {
             </button>
           </div>
         </section>
+        </>
+        )}
       </main>
 
       {showModal && (
