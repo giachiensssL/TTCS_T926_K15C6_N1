@@ -72,4 +72,24 @@ public class LessonSessionController {
 
         service.deleteSession(id);
     }
+    
+    // KNJ-66: Nhan ban danh sach buoi hoc tu mon khac
+    @PostMapping("/subjects/{targetSubjectId}/sessions/copy")
+    @ResponseStatus(HttpStatus.CREATED)
+    public List<SessionResponse> copySessions(
+            @PathVariable Long targetSubjectId,
+            @RequestBody CopySessionsRequest request) {
+
+        return service.copySessions(
+                request.sourceSubjectId(),
+                targetSubjectId
+        );
+    }
+
+    // Du lieu nhan tu Frontend khi nhan ban
+    public record CopySessionsRequest(
+            Long sourceSubjectId
+    ) {}
+
 }
+

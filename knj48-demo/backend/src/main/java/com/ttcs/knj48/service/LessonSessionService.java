@@ -189,4 +189,102 @@ public class LessonSessionService {
 
         sessionRepository.delete(session);
     }
+    
+    // KNJ-66: Nhan ban danh sach buoi hoc tu mon khac
+    @Transactional
+    public List<SessionResponse> copySessions(
+            Long sourceSubjectId,
+            Long targetSubjectId) {
+
+        // Khong cho phep sao chep vao chinh mon do
+        if (sourceSubjectId.equals(targetSubjectId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Khong the nhan ban vao cung mot mon hoc"
+            );
+        }
+
+        // Kiem tra mon nguon
+        if (!subjectRepository.existsById(sourceSubjectId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Mon hoc nguon khong ton tai"
+            );
+        }
+
+        // Kiem tra mon dich
+        Subject target = subjectRepository.findById(targetSubjectId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Mon hoc dich khong ton tai"
+                ));
+
+        // Lay danh sach buoi hoc cua mon nguon
+        List<LessonSession> sourceSessions = sessionRepository
+                .findBySubjectIdOrderBySessionNumberAsc(sourceSubjectId);
+
+        if (sourceSessions.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Mon hoc nguon chua co buoi hoc"
+            );
+        }
+
+        // Kiem tra gioi han va trung so thu tu
+        for (LessonSession source : sourceSessions) {
+
+            Integer number = source.getSessionNumber();
+
+            if (number > target.getTotalSessions()) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "So buoi vuot gioi han mon dich"
+                );
+            }
+
+            if (sessionRepository
+                    .existsBySubjectIdAndSessionNumber(
+                            targetSubjectId, number)) {
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "Mon dich da co buoi so " + number
+                );
+            }
+        }
+
+        // Kiem tra tong so buoi sau nhan ban
+        long existingCount =
+                sessionRepository.countBySubjectId(targetSubjectId);
+
+        if (existingCount + sourceSessions.size()
+                > target.getTotalSessions()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Tong so buoi vuot gioi han mon dich"
+            );
+        }
+
+        // Tao cac buoi hoc moi
+        List<LessonSession> copies = new java.util.ArrayList<>();
+
+        for (LessonSession source : sourceSessions) {
+            LessonSession copy = new LessonSession();
+
+            copy.setSubject(target);
+            copy.setSessionNumber(source.getSessionNumber());
+            copy.setTopic(source.getTopic());
+            copy.setObjectives(source.getObjectives());
+
+            copies.add(copy);
+        }
+
+        // Luu danh sach vao database
+        List<LessonSession> saved =
+                sessionRepository.saveAll(copies);
+
+        return saved.stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
 }
