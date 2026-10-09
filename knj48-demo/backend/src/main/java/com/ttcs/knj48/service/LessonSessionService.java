@@ -46,7 +46,31 @@ public class LessonSessionService {
         );
     }
 
-    // Lay danh sach buoi hoc theo mon
+    // Kiem tra thong tin buoi hoc hop le
+    private void validateSession(
+            Integer sessionNumber,
+            String topic,
+            String objectives) {
+
+        if (sessionNumber == null || sessionNumber < 1 ||
+                topic == null || topic.isBlank() ||
+                objectives == null || objectives.isBlank()) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Thong tin buoi hoc khong hop le"
+            );
+        }
+
+        if (topic.length() > 255) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Chu de khong duoc vuot qua 255 ky tu"
+            );
+        }
+    }
+
+    // KNJ-64: Lay danh sach buoi hoc theo mon
     @Transactional(readOnly = true)
     public List<SessionResponse> getSessions(Long subjectId) {
 
@@ -64,7 +88,7 @@ public class LessonSessionService {
                 .toList();
     }
 
-    // Them buoi hoc moi
+    // KNJ-64 + KNJ-65: Them buoi hoc moi
     @Transactional
     public SessionResponse createSession(
             Long subjectId,
@@ -72,24 +96,27 @@ public class LessonSessionService {
             String topic,
             String objectives) {
 
-        Subject subject = subjectRepository
-                .findById(subjectId)
+        Subject subject = subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "Mon hoc khong ton tai"
                 ));
 
-        if (sessionNumber == null || sessionNumber < 1 ||
-                topic == null || topic.isBlank() ||
-                objectives == null || objectives.isBlank()) {
+        // Kiem tra du lieu dau vao
+        validateSession(sessionNumber, topic, objectives);
+
+        // KNJ-65: Khong cho vuot tong so buoi
+        if (sessionNumber > subject.getTotalSessions()) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Thong tin buoi hoc khong hop le"
+                    "So thu tu buoi hoc vuot gioi han cua mon hoc"
             );
         }
 
+        // Khong cho phep trung so thu tu
         if (sessionRepository.existsBySubjectIdAndSessionNumber(
                 subjectId, sessionNumber)) {
+
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
                     "So thu tu buoi hoc da ton tai"
@@ -104,8 +131,8 @@ public class LessonSessionService {
 
         return toResponse(sessionRepository.save(session));
     }
-    
-    // Sua thong tin buoi hoc
+
+    // KNJ-64 + KNJ-65: Sua thong tin buoi hoc
     @Transactional
     public SessionResponse updateSession(
             Long id,
@@ -119,20 +146,24 @@ public class LessonSessionService {
                         "Buoi hoc khong ton tai"
                 ));
 
-        if (sessionNumber == null || sessionNumber < 1 ||
-                topic == null || topic.isBlank() ||
-                objectives == null || objectives.isBlank()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Thong tin khong hop le"
-            );
-        }
+        // Kiem tra du lieu dau vao
+        validateSession(sessionNumber, topic, objectives);
 
         Long subjectId = session.getSubject().getId();
 
+        // KNJ-65: Kiem tra gioi han khi sua
+        if (sessionNumber > session.getSubject().getTotalSessions()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "So thu tu buoi hoc vuot gioi han cua mon hoc"
+            );
+        }
+
+        // Kiem tra trung so thu tu, bo qua buoi dang sua
         if (sessionRepository
                 .existsBySubjectIdAndSessionNumberAndIdNot(
                         subjectId, sessionNumber, id)) {
+
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
                     "So thu tu buoi hoc da ton tai"
@@ -146,9 +177,10 @@ public class LessonSessionService {
         return toResponse(sessionRepository.save(session));
     }
 
-    // Xoa buoi hoc
+    // KNJ-64: Xoa buoi hoc
     @Transactional
     public void deleteSession(Long id) {
+
         LessonSession session = sessionRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
@@ -157,5 +189,4 @@ public class LessonSessionService {
 
         sessionRepository.delete(session);
     }
-
 }
