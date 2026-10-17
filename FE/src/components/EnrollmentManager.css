@@ -4,3 +4,5 @@
 .enrollment-manager button{border:0;border-radius:7px;padding:10px 12px;background:#185ecb;color:white;cursor:pointer;margin:6px 6px 6px 0}
 .enrollment-manager button:disabled{opacity:.5;cursor:not-allowed}.enrollment-manager ul{list-style:none;padding:0;max-height:340px;overflow:auto}
 .enrollment-manager li{padding:10px 8px;border-bottom:1px solid #eef1f5}.enrollment-manager [role=status]{padding:12px;background:#eaf2ff;border-radius:8px}
+.enrollment-manager input[type=password],.enrollment-manager input[autocomplete=username]{display:block;padding:10px;width:100%;box-sizing:border-box;border:1px solid #b7c6da;border-radius:8px;margin:6px 0}
+.enrollment-manager .enrollment-controls{grid-template-columns:repeat(auto-fit,minmax(160px,1fr));align-items:end}

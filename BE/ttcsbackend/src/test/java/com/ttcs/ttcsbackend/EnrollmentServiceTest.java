@@ -50,4 +50,14 @@ class EnrollmentServiceTest {
   service.enrollOne(classId,student1,adminId);
   assertThrows(ResponseStatusException.class,()->service.setCapacity(classId,0,adminId));
  }
+ @Test void operatorRoleIsValidated(){
+  assertThrows(ResponseStatusException.class, ()->service.enrollOne(classId,student1,student1));
+  assertEquals(0,service.capacity(classId).enrolledCount());
+ }
+ @Test void bulkDoesNotPartiallyInsertWhenFull(){
+  service.enrollOne(classId,student1,adminId);
+  assertThrows(ResponseStatusException.class, ()->service.enrollMany(classId,List.of(student2,student3),adminId));
+  assertEquals(1,service.capacity(classId).enrolledCount());
+ }
+
 }
