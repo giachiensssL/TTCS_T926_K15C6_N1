@@ -1,0 +1,6 @@
+.enrollment-manager{font-family:Arial,sans-serif;max-width:1100px;margin:24px auto;padding:24px;background:#fff;border-radius:12px;box-shadow:0 2px 18px #0001;color:#142133}
+.enrollment-manager h2{margin-top:0}.enrollment-controls,.enrollment-panels{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+.enrollment-manager label{display:block}.enrollment-manager input[type=number],.enrollment-manager input[aria-label]{display:block;padding:10px;width:100%;box-sizing:border-box;border:1px solid #b7c6da;border-radius:8px;margin:6px 0}
+.enrollment-manager button{border:0;border-radius:7px;padding:10px 12px;background:#185ecb;color:white;cursor:pointer;margin:6px 6px 6px 0}
+.enrollment-manager button:disabled{opacity:.5;cursor:not-allowed}.enrollment-manager ul{list-style:none;padding:0;max-height:340px;overflow:auto}
+.enrollment-manager li{padding:10px 8px;border-bottom:1px solid #eef1f5}.enrollment-manager [role=status]{padding:12px;background:#eaf2ff;border-radius:8px}
