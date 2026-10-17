@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import Admissions from './Admissions'
 import './App.css'
 
 type Account = {
@@ -29,6 +30,7 @@ const emptyForm: AccountForm = {
 }
 
 function App() {
+  const [activeModule, setActiveModule] = useState<'admissions' | 'accounts'>('admissions')
   const [accounts, setAccounts] = useState<Account[]>([])
   const [username, setUsername] = useState('')
   const [role, setRole] = useState('')
@@ -47,9 +49,6 @@ function App() {
 
   const loadAccounts = async () => {
     try {
-      setLoading(true)
-      setError('')
-
       const params = new URLSearchParams({
         username,
         role,
@@ -65,6 +64,7 @@ function App() {
 
       const data = await response.json()
 
+      setError('')
       setAccounts(data.content)
       setTotalPages(data.totalPages)
       setTotalElements(data.totalElements)
@@ -77,12 +77,50 @@ function App() {
   }
 
   useEffect(() => {
-    loadAccounts()
-  }, [page, username, role, status])
+    if (activeModule !== 'accounts') return
+
+    let cancelled = false
+    const params = new URLSearchParams({
+      username,
+      role,
+      status,
+      page: String(page),
+    })
+
+    fetch(`${API_URL}?${params.toString()}`)
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Không thể lấy danh sách tài khoản')
+        return response.json() as Promise<{
+          content: Account[]
+          totalPages: number
+          totalElements: number
+        }>
+      })
+      .then((data) => {
+        if (cancelled) return
+        setError('')
+        setAccounts(data.content)
+        setTotalPages(data.totalPages)
+        setTotalElements(data.totalElements)
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return
+        setError('Không thể kết nối tới Backend. Hãy kiểm tra Spring Boot đang chạy ở port 8080.')
+        console.error(err)
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [activeModule, page, role, status, username])
 
   const handleSearch = () => {
     setPage(0)
-    loadAccounts()
+    setLoading(true)
+    void loadAccounts()
   }
 
   const openCreateModal = () => {
@@ -198,10 +236,31 @@ function App() {
     }
 
     setPage(newPage)
+    setLoading(true)
   }
 
   return (
-    <div className="app">
+    <div className="workspace">
+      <nav className="module-navigation">
+        <span className="module-brand">TMS · Đào tạo</span>
+        <button
+          className={activeModule === 'admissions' ? 'active' : ''}
+          onClick={() => setActiveModule('admissions')}
+        >
+          Tuyển sinh
+        </button>
+        <button
+          className={activeModule === 'accounts' ? 'active' : ''}
+          onClick={() => {
+            if (activeModule !== 'accounts') setLoading(true)
+            setActiveModule('accounts')
+          }}
+        >
+          Tài khoản
+        </button>
+      </nav>
+      {activeModule === 'admissions' ? <Admissions /> : (
+      <div className="app">
       <header className="header">
         <div>
           <h1>Quản lý người dùng</h1>
@@ -227,6 +286,7 @@ function App() {
               onChange={(event) => {
                 setUsername(event.target.value)
                 setPage(0)
+                setLoading(true)
               }}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') {
@@ -243,6 +303,7 @@ function App() {
               onChange={(event) => {
                 setRole(event.target.value)
                 setPage(0)
+                setLoading(true)
               }}
             >
               <option value="">Tất cả vai trò</option>
@@ -258,6 +319,7 @@ function App() {
               onChange={(event) => {
                 setStatus(event.target.value)
                 setPage(0)
+                setLoading(true)
               }}
             >
               <option value="">Tất cả trạng thái</option>
@@ -280,6 +342,7 @@ function App() {
               setRole('')
               setStatus('')
               setPage(0)
+              setLoading(true)
             }}
           >
             Đặt lại
@@ -546,6 +609,8 @@ function App() {
             </div>
           </div>
         </div>
+      )}
+      </div>
       )}
     </div>
   )
