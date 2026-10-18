@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import './App.css'
+import AdmissionsCareView from './components/AdmissionsCareView'
 
 type Account = {
   id: number
@@ -29,6 +30,7 @@ const emptyForm: AccountForm = {
 }
 
 function App() {
+  const [activeTab, setActiveTab] = useState<'admissions' | 'accounts'>('admissions')
   const [accounts, setAccounts] = useState<Account[]>([])
   const [username, setUsername] = useState('')
   const [role, setRole] = useState('')
@@ -202,19 +204,40 @@ function App() {
 
   return (
     <div className="app">
-      <header className="header">
-        <div>
-          <h1>Quản lý người dùng</h1>
-          <p>Quản lý tài khoản và phân quyền hệ thống</p>
-        </div>
-
+      <nav className="app-nav-tabs">
         <button
-          className="primary-button"
-          onClick={openCreateModal}
+          className={`nav-tab-btn ${activeTab === 'admissions' ? 'active' : ''}`}
+          onClick={() => setActiveTab('admissions')}
         >
-          + Thêm tài khoản
+          <span>🎓</span>
+          <span>Tư vấn Tuyển sinh & Chăm sóc Lead (S2-03)</span>
         </button>
-      </header>
+        <button
+          className={`nav-tab-btn ${activeTab === 'accounts' ? 'active' : ''}`}
+          onClick={() => setActiveTab('accounts')}
+        >
+          <span>👥</span>
+          <span>Quản lý người dùng & Phân quyền</span>
+        </button>
+      </nav>
+
+      {activeTab === 'admissions' ? (
+        <AdmissionsCareView />
+      ) : (
+        <>
+          <header className="header">
+            <div>
+              <h1>Quản lý người dùng</h1>
+              <p>Quản lý tài khoản và phân quyền hệ thống</p>
+            </div>
+
+            <button
+              className="primary-button"
+              onClick={openCreateModal}
+            >
+              + Thêm tài khoản
+            </button>
+          </header>
 
       <main className="container">
         <section className="filter-card">
@@ -546,6 +569,8 @@ function App() {
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   )
