@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Đăng nhập vào hệ thống quản lý">
+    <title>Đăng nhập - Hệ thống quản lý</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="auth-container">
+        <!-- Animated background -->
+        <div class="bg-decoration">
+            <div class="bg-circle bg-circle-1"></div>
+            <div class="bg-circle bg-circle-2"></div>
+            <div class="bg-circle bg-circle-3"></div>
+        </div>
+
+        <div class="auth-card" id="loginCard">
+            <!-- Logo/Header -->
+            <div class="auth-header">
+                <div class="auth-logo">
+                    <span class="logo-icon">🔐</span>
+                </div>
+                <h1 class="auth-title">Đăng nhập</h1>
+                <p class="auth-subtitle">Chào mừng bạn trở lại</p>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" class="auth-form" novalidate>
+                <div class="form-group">
+                    <label for="loginEmail" class="form-label">Email</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">📧</span>
+                        <input type="email" id="loginEmail" class="form-input" 
+                               placeholder="Nhập email của bạn" required autocomplete="email">
+                    </div>
+                    <span class="form-error" id="loginEmailError"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="loginPassword" class="form-label">Mật khẩu</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">🔒</span>
+                        <input type="password" id="loginPassword" class="form-input" 
+                               placeholder="Nhập mật khẩu" required autocomplete="current-password">
+                        <button type="button" class="toggle-password" onclick="togglePassword('loginPassword', this)">
+                            👁️
+                        </button>
+                    </div>
+                    <span class="form-error" id="loginPasswordError"></span>
+                </div>
+
+                <div class="form-actions-row">
+                    <a href="forgot-password.html" class="forgot-password-link" id="forgotPasswordLink">Quên mật khẩu?</a>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="loginButton">
+                    <span class="btn-text">Đăng nhập</span>
+                    <span class="btn-loader" style="display:none;">
+                        <span class="spinner"></span>
+                    </span>
+                </button>
+
+                <!-- Alert message -->
+                <div id="loginAlert" class="alert" style="display:none;"></div>
+            </form>
+
+            <div class="auth-footer">
+                <p>Chưa có tài khoản? <a href="register.html" class="auth-link">Đăng ký</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const button = document.getElementById('loginButton');
+            const alert = document.getElementById('loginAlert');
+
+            // Reset errors
+            clearErrors();
+
+            // Validate
+            let valid = true;
+            if (!email) {
+                showFieldError('loginEmailError', 'Vui lòng nhập email.');
+                valid = false;
+            } else if (!isValidEmail(email)) {
+                showFieldError('loginEmailError', 'Email không hợp lệ.');
+                valid = false;
+            }
+            if (!password) {
+                showFieldError('loginPasswordError', 'Vui lòng nhập mật khẩu.');
+                valid = false;
+            }
+
+            if (!valid) return;
+
+            // Submit
+            setLoading(button, true);
+            hideAlert(alert);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Lưu tokens (S1-02)
+                    saveTokens(data);
+                    showAlert(alert, 'Đăng nhập thành công!', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1000);
+                } else {
+                    showAlert(alert, data.message || 'Đăng nhập thất bại.', 'error');
+                }
+            } catch (error) {
+                showAlert(alert, 'Không thể kết nối đến máy chủ.', 'error');
+            } finally {
+                setLoading(button, false);
+            }
+        });
+    </script>
+</body>
+</html>

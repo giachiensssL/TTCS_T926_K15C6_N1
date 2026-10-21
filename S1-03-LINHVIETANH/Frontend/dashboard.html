@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Dashboard - Hệ thống quản lý">
+    <title>Dashboard - Hệ thống quản lý</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <nav class="dashboard-nav">
+            <div class="nav-brand">
+                <span class="logo-icon">🏠</span>
+                <span class="nav-title">Hệ thống quản lý</span>
+            </div>
+            <div class="nav-actions">
+                <span class="nav-user" id="navUserName">Xin chào!</span>
+                <button class="btn btn-outline" id="logoutButton" onclick="handleLogout()">
+                    Đăng xuất
+                </button>
+            </div>
+        </nav>
+
+        <main class="dashboard-main">
+            <div class="dashboard-welcome">
+                <h1>Chào mừng bạn đến với hệ thống!</h1>
+                <p>Bạn đã đăng nhập thành công.</p>
+                <div class="dashboard-info">
+                    <div class="info-card">
+                        <div class="info-icon">✅</div>
+                        <div class="info-text">
+                            <h3>S1-02: Session Management</h3>
+                            <p>Login / Refresh Token / Logout hoạt động</p>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-icon">🔐</div>
+                        <div class="info-text">
+                            <h3>S1-03: Password Reset</h3>
+                            <p>Quên mật khẩu / Đặt lại mật khẩu hoạt động</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        // Kiểm tra đăng nhập
+        const tokens = getTokens();
+        if (!tokens || !tokens.accessToken) {
+            window.location.href = 'index.html';
+        }
+
+        // Hiển thị tên user từ JWT
+        try {
+            const payload = JSON.parse(atob(tokens.accessToken.split('.')[1]));
+            const userName = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || 'User';
+            document.getElementById('navUserName').textContent = `Xin chào, ${userName}!`;
+        } catch (e) {
+            // Ignore parse errors
+        }
+
+        // Logout handler (S1-02)
+        async function handleLogout() {
+            try {
+                const tokens = getTokens();
+                await fetch(`${API_BASE_URL}/api/auth/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${tokens.accessToken}`
+                    }
+                });
+            } catch (e) {
+                // Proceed with local logout even if API call fails
+            }
+            
+            clearTokens();
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

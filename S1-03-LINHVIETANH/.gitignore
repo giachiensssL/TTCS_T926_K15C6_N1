@@ -1,0 +1,19 @@
+# .NET build output
+**/bin/
+**/obj/
+.vs/
+*.user
+*.suo
+
+# Frontend dependencies and build output
+**/node_modules/
+**/dist/
+**/coverage/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+Backend/appsettings.json
+Backend/appsettings.*.json
+!Backend/appsettings.example.json
