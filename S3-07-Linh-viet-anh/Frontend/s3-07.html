@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>S3-07 | Quản lý đào tạo</title>
+  <link rel="stylesheet" href="css/s3-07.css">
+</head>
+<body>
+  <main class="page">
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">QUẢN LÝ ĐÀO TẠO</p>
+        <h1>Danh sách lớp học</h1>
+        <p class="subtitle">Theo dõi sĩ số, chương trình, giảng viên và tiến độ buổi học trên một màn hình.</p>
+      </div>
+      <button id="refreshButton" class="button button-secondary" type="button">↻ Làm mới</button>
+    </header>
+
+    <section class="stats-grid" aria-label="Chỉ số nhanh">
+      <article class="stat-card"><span class="stat-label">Tổng số lớp</span><strong id="totalClasses">—</strong><span class="stat-note">Theo bộ lọc hiện tại</span></article>
+      <article class="stat-card"><span class="stat-label">Lớp đang chạy</span><strong id="activeClasses">—</strong><span class="stat-note">Trạng thái đang diễn ra</span></article>
+      <article class="stat-card"><span class="stat-label">Tổng học viên</span><strong id="totalStudents">—</strong><span class="stat-note">Sĩ số hiện tại</span></article>
+      <article class="stat-card"><span class="stat-label">Lớp sắp kết thúc</span><strong id="endingClasses">—</strong><span class="stat-note">Trong 14 ngày tới</span></article>
+    </section>
+
+    <section class="panel filters-panel">
+      <div class="section-heading">
+        <div><h2>Bộ lọc lớp học</h2><p>Lọc theo trạng thái, chương trình, giảng viên hoặc thời gian.</p></div>
+        <button id="resetFilters" class="text-button" type="button">Xóa bộ lọc</button>
+      </div>
+      <form id="filtersForm" class="filters-grid">
+        <label>Trạng thái
+          <select id="statusFilter">
+            <option value="">Tất cả trạng thái</option>
+            <option value="Đang diễn ra">Đang diễn ra</option>
+            <option value="Sắp khai giảng">Sắp khai giảng</option>
+            <option value="Đã kết thúc">Đã kết thúc</option>
+            <option value="Đã hủy">Đã hủy</option>
+          </select>
+        </label>
+        <label>Chương trình
+          <input id="programFilter" type="search" placeholder="Nhập tên chương trình">
+        </label>
+        <label>Giảng viên
+          <input id="instructorFilter" type="search" placeholder="Nhập tên giảng viên">
+        </label>
+        <label>Từ ngày
+          <input id="fromDateFilter" type="date">
+        </label>
+        <label>Đến ngày
+          <input id="toDateFilter" type="date">
+        </label>
+        <div class="filter-actions"><button class="button button-primary" type="submit">Áp dụng bộ lọc</button></div>
+      </form>
+    </section>
+
+    <section class="panel table-panel">
+      <div class="section-heading">
+        <div><h2>Các lớp đào tạo</h2><p id="resultCount">Đang chuẩn bị dữ liệu…</p></div>
+        <span id="connectionBadge" class="connection-badge">Chưa tải dữ liệu</span>
+      </div>
+      <div id="alert" class="alert" role="status" hidden></div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr>
+            <th>Lớp học</th><th>Chương trình</th><th>Giảng viên</th><th>Thời gian</th><th>Sĩ số</th><th>Tiến độ buổi học</th><th>Trạng thái</th>
+          </tr></thead>
+          <tbody id="classesTableBody"><tr><td colspan="7" class="empty-cell">Đang tải dữ liệu…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="table-footer">Số liệu được tải từ API của hệ thống; chỉ số nhanh phản ánh danh sách sau khi áp dụng bộ lọc.</div>
+    </section>
+    <footer class="page-footer">S3-07 · Quản lý đào tạo</footer>
+  </main>
+  <script src="js/s3-07.js"></script>
+</body>
+</html>

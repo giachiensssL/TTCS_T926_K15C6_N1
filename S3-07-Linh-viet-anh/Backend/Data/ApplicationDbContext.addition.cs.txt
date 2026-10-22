@@ -1,0 +1,6 @@
+// Hợp nhất dòng dưới đây vào class ApplicationDbContext hiện có.
+// Không tạo class ApplicationDbContext thứ hai.
+//
+// public DbSet<TrainingClass> TrainingClasses { get; set; } = null!;
+//
+// Thêm using Backend.Models; nếu cần.

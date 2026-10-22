@@ -1,0 +1,5 @@
+// TEMPLATE THAM KHẢO — KHÔNG chép trực tiếp vào thư mục Migrations rồi chạy ngay.
+// Khuyến nghị tạo migration bằng:
+// dotnet ef migrations add AddTrainingClassesTable
+// sau khi đã thêm TrainingClass và DbSet<TrainingClass> vào DbContext.
+// EF Core sẽ tạo migration phù hợp với phiên bản model và namespace thực tế.
