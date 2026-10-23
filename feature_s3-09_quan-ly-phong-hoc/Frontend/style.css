@@ -1,0 +1,103 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #F5F3ED;
+    color: #333;
+}
+
+.container {
+    width: 700px;
+    max-width: 90%;
+    margin: 40px auto;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 5px;
+    color: #202D2A;
+    font-family: Georgia, "Times New Roman", serif;
+    font-weight: 400;
+}
+
+.subtitle {
+    text-align: center;
+    color: #66736D;
+    margin-bottom: 30px;
+}
+
+.card {
+    background: #FFFEFA;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+border: 1px solid #DCE2D8;
+box-shadow: 0 24px 70px rgba(30,51,41,0.1);
+}
+
+.card h2 {
+    margin-top: 0;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+button {
+    width: 100%;
+    padding: 11px;
+    border: none;
+    border-radius: 6px;
+    background: #2563eb;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+button.danger {
+    background: #C76149;
+}
+
+.role {
+    display: inline-block;
+    background: #E7F0EA;
+    color: #176B50;
+    padding: 7px 12px;
+    border-radius: 20px;
+    margin: 4px;
+}
+
+#message {
+    padding: 12px;
+    border-radius: 6px;
+    display: none;
+}
+
+.success {
+    display: block !important;
+    background: #E7F0EA;
+    color: #176B50;
+}
+
+.error {
+    display: block !important;
+    background: #FEE2E2;
+    color: #A33C32;
+}
