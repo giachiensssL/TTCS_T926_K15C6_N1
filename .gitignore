@@ -24,3 +24,11 @@ BE/ttcsbackend/.env.*
 # ===== OS =====
 .DS_Store
 Thumbs.db
+# Local Node feature workspace
+Backend/node_modules/
+Frontend/node_modules/
+Frontend/dist/
+**/.env
+**/.env.*
+!**/.env.example
+
