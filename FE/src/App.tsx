@@ -8,6 +8,20 @@ type Account = {
   fullName: string
   role: string
   status: string
+  lockReason: string | null
+  lockedAt: string | null
+  classesToHandover: string[]
+}
+
+type CurrentAccount = {
+  username: string
+  role: string
+}
+
+type TrainingClass = {
+  id: number
+  name: string
+  instructorAccountId: number
 }
 
 type AccountForm = {
@@ -19,6 +33,7 @@ type AccountForm = {
 }
 
 const API_URL = 'http://localhost:8080/api/accounts'
+const API_BASE_URL = 'http://localhost:8080/api'
 
 const emptyForm: AccountForm = {
   username: '',
@@ -29,7 +44,14 @@ const emptyForm: AccountForm = {
 }
 
 function App() {
+  const [currentAccount, setCurrentAccount] = useState<CurrentAccount | null>(null)
+  const [sessionChecked, setSessionChecked] = useState(false)
+  const [loginUsername, setLoginUsername] = useState('')
+  const [loginPassword, setLoginPassword] = useState('')
+  const [loginError, setLoginError] = useState('')
+  const [csrfToken, setCsrfToken] = useState('')
   const [accounts, setAccounts] = useState<Account[]>([])
+  const [trainingClasses, setTrainingClasses] = useState<TrainingClass[]>([])
   const [username, setUsername] = useState('')
   const [role, setRole] = useState('')
   const [status, setStatus] = useState('')
@@ -44,8 +66,79 @@ function App() {
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
+  const [lockReason, setLockReason] = useState('')
+  const [newClassName, setNewClassName] = useState('')
+  const [instructorId, setInstructorId] = useState('')
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/auth/me`, { credentials: 'include' })
+      .then(async (response) => {
+        if (response.ok) {
+          setCurrentAccount(await response.json())
+        } else if (response.status !== 401) {
+          throw new Error('Không thể kiểm tra phiên đăng nhập.')
+        }
+      })
+      .catch((sessionError: unknown) => {
+        setLoginError(sessionError instanceof Error ? sessionError.message : 'Không thể kết nối tới Backend.')
+      })
+      .finally(() => setSessionChecked(true))
+  }, [])
+
+  const getCsrfToken = async () => {
+    const response = await fetch(`${API_BASE_URL}/auth/csrf`, { credentials: 'include' })
+    if (!response.ok) {
+      throw new Error('Không thể tạo mã bảo mật. Vui lòng thử lại.')
+    }
+    const data = await response.json()
+    setCsrfToken(data.token)
+    return data.token as string
+  }
+
+  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setLoginError('')
+    try {
+      const token = await getCsrfToken()
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': token },
+        body: JSON.stringify({ username: loginUsername.trim(), password: loginPassword }),
+      })
+      const body = await response.json()
+      if (!response.ok) {
+        throw new Error(body.message ?? 'Đăng nhập không thành công.')
+      }
+      setCurrentAccount(body)
+      setLoginPassword('')
+      await getCsrfToken()
+    } catch (loginFailure: unknown) {
+      setLoginError(loginFailure instanceof Error ? loginFailure.message : 'Đăng nhập không thành công.')
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      const token = csrfToken || await getCsrfToken()
+      const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'X-XSRF-TOKEN': token },
+      })
+      if (!response.ok) {
+        throw new Error('Không thể đăng xuất. Vui lòng thử lại.')
+      }
+      setCurrentAccount(null)
+      setAccounts([])
+    } catch (logoutFailure: unknown) {
+      setError(logoutFailure instanceof Error ? logoutFailure.message : 'Không thể đăng xuất.')
+    }
+  }
 
   const loadAccounts = async () => {
+    if (!currentAccount) return
     try {
       setLoading(true)
       setError('')
@@ -57,17 +150,26 @@ function App() {
         page: String(page),
       })
 
-      const response = await fetch(`${API_URL}?${params.toString()}`)
+      const response = await fetch(`${API_URL}?${params.toString()}`, { credentials: 'include' })
 
       if (!response.ok) {
+        if (response.status === 401) {
+          setCurrentAccount(null)
+          return
+        }
         throw new Error('Không thể lấy danh sách tài khoản')
       }
 
       const data = await response.json()
 
-      setAccounts(data.content)
       setTotalPages(data.totalPages)
       setTotalElements(data.totalElements)
+      setAccounts(data.content.map((account: Account) => ({
+        ...account,
+        lockReason: account.lockReason ?? null,
+        lockedAt: account.lockedAt ?? null,
+        classesToHandover: account.classesToHandover ?? [],
+      })))
     } catch (err) {
       setError('Không thể kết nối tới Backend. Hãy kiểm tra Spring Boot đang chạy ở port 8080.')
       console.error(err)
@@ -77,8 +179,50 @@ function App() {
   }
 
   useEffect(() => {
+    if (!currentAccount) return
     loadAccounts()
-  }, [page, username, role, status])
+    fetch(`${API_BASE_URL}/classes`, { credentials: 'include' })
+      .then(async (response) => {
+        if (!response.ok) return
+        setTrainingClasses(await response.json())
+      })
+      .catch((classError: unknown) => console.error(classError))
+  }, [page, username, role, status, currentAccount])
+
+  if (!sessionChecked) {
+    return <main className="auth-page">Kiểm tra phiên đăng nhập...</main>
+  }
+
+  if (!currentAccount) {
+    return (
+      <main className="auth-page">
+        <form className="auth-card" onSubmit={handleLogin}>
+          <h1>Quản trị tài khoản</h1>
+          <p>Đăng nhập bằng tài khoản quản trị hệ thống.</p>
+          {loginError && <div className="error-message" role="alert">{loginError}</div>}
+          <label htmlFor="login-username">Tên đăng nhập hoặc email</label>
+          <input id="login-username" required autoComplete="username" value={loginUsername}
+            onChange={(event) => setLoginUsername(event.target.value)} />
+          <label htmlFor="login-password">Mật khẩu</label>
+          <input id="login-password" required type="password" autoComplete="current-password"
+            value={loginPassword} onChange={(event) => setLoginPassword(event.target.value)} />
+          <button className="primary-button" type="submit">Đăng nhập</button>
+        </form>
+      </main>
+    )
+  }
+
+  if (currentAccount.role?.toUpperCase() !== 'ADMIN') {
+    return (
+      <main className="auth-page">
+        <section className="auth-card">
+          <h1>Không có quyền truy cập</h1>
+          <p>Chỉ Quản trị hệ thống mới có thể quản lý trạng thái tài khoản.</p>
+          <button className="reset-button" onClick={() => void handleLogout()}>Đăng xuất</button>
+        </section>
+      </main>
+    )
+  }
 
   const handleSearch = () => {
     setPage(0)
@@ -141,10 +285,13 @@ function App() {
 
       const method = editingId === null ? 'POST' : 'PUT'
 
+      const token = csrfToken || await getCsrfToken()
       const response = await fetch(url, {
         method,
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
+          'X-XSRF-TOKEN': token,
         },
         body: JSON.stringify(form),
       })
@@ -177,18 +324,80 @@ function App() {
 
       const response = await fetch(`${API_URL}/${id}`, {
         method: 'DELETE',
+        credentials: 'include',
+        headers: { 'X-XSRF-TOKEN': csrfToken },
       })
 
       if (!response.ok) {
         throw new Error('Không thể xóa tài khoản')
       }
-
       await loadAccounts()
     } catch (err) {
       alert('Không thể xóa tài khoản.')
       console.error(err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleLockAccount = async () => {
+    if (!selectedAccount || !lockReason.trim()) return
+    try {
+      const token = csrfToken || await getCsrfToken()
+      const response = await fetch(`${API_URL}/${selectedAccount.id}/lock`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': token },
+        body: JSON.stringify({ reason: lockReason.trim() }),
+      })
+      if (!response.ok) {
+        throw new Error(await response.text() || 'Không thể khóa tài khoản.')
+      }
+      setSelectedAccount(null)
+      setLockReason('')
+      await loadAccounts()
+    } catch (lockFailure: unknown) {
+      setError(lockFailure instanceof Error ? lockFailure.message : 'Không thể khóa tài khoản.')
+    }
+  }
+
+  const handleUnlockAccount = async (accountId: number) => {
+    try {
+      const token = csrfToken || await getCsrfToken()
+      const response = await fetch(`${API_URL}/${accountId}/unlock`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'X-XSRF-TOKEN': token },
+      })
+      if (!response.ok) {
+        throw new Error(await response.text() || 'Không thể mở khóa tài khoản.')
+      }
+      await loadAccounts()
+    } catch (unlockFailure: unknown) {
+      setError(unlockFailure instanceof Error ? unlockFailure.message : 'Không thể mở khóa tài khoản.')
+    }
+  }
+
+  const handleCreateClass = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!newClassName.trim() || !instructorId) return
+    try {
+      const token = csrfToken || await getCsrfToken()
+      const response = await fetch(`${API_BASE_URL}/classes`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': token },
+        body: JSON.stringify({ name: newClassName.trim(), instructorAccountId: Number(instructorId) }),
+      })
+      if (!response.ok) {
+        throw new Error(await response.text() || 'Không thể ghi nhận lớp.')
+      }
+      setNewClassName('')
+      const classResponse = await fetch(`${API_BASE_URL}/classes`, { credentials: 'include' })
+      if (classResponse.ok) setTrainingClasses(await classResponse.json())
+      await loadAccounts()
+    } catch (classFailure: unknown) {
+      setError(classFailure instanceof Error ? classFailure.message : 'Không thể ghi nhận lớp.')
     }
   }
 
@@ -205,15 +414,13 @@ function App() {
       <header className="header">
         <div>
           <h1>Quản lý người dùng</h1>
-          <p>Quản lý tài khoản và phân quyền hệ thống</p>
+          <p>Quản trị viên: {currentAccount.username}</p>
         </div>
 
-        <button
-          className="primary-button"
-          onClick={openCreateModal}
-        >
-          + Thêm tài khoản
-        </button>
+        <div className="header-actions">
+          <button className="primary-button" onClick={openCreateModal}>+ Thêm tài khoản</button>
+          <button className="reset-button" onClick={() => void handleLogout()}>Đăng xuất</button>
+        </div>
       </header>
 
       <main className="container">
@@ -263,6 +470,7 @@ function App() {
               <option value="">Tất cả trạng thái</option>
               <option value="ACTIVE">ACTIVE</option>
               <option value="INACTIVE">INACTIVE</option>
+              <option value="LOCKED">LOCKED</option>
             </select>
           </div>
 
@@ -292,6 +500,40 @@ function App() {
           </div>
         )}
 
+        <section className="class-handover-card">
+          <div>
+            <h2>Lớp học cần bàn giao</h2>
+            <p>Gán lớp cho giảng viên để hệ thống hiển thị cảnh báo khi khóa tài khoản.</p>
+          </div>
+          <form className="class-assignment-form" onSubmit={handleCreateClass}>
+            <input
+              required
+              maxLength={200}
+              aria-label="Tên lớp"
+              placeholder="Tên lớp"
+              value={newClassName}
+              onChange={(event) => setNewClassName(event.target.value)}
+            />
+            <select
+              required
+              aria-label="Giảng viên phụ trách"
+              value={instructorId}
+              onChange={(event) => setInstructorId(event.target.value)}
+            >
+              <option value="">Chọn nhân sự phụ trách</option>
+              {accounts
+                .filter((account) => account.role?.toUpperCase() !== 'ADMIN' && account.status === 'ACTIVE')
+                .map((account) => (
+                  <option key={account.id} value={account.id}>{account.fullName} ({account.username})</option>
+                ))}
+            </select>
+            <button className="search-button" type="submit">Gán lớp</button>
+          </form>
+          {trainingClasses.length > 0 && (
+            <p className="class-count">Đã ghi nhận {trainingClasses.length} lớp phụ trách.</p>
+          )}
+        </section>
+
         <section className="table-card">
           <div className="table-header">
             <div>
@@ -312,6 +554,7 @@ function App() {
                   <th>Họ và tên</th>
                   <th>Vai trò</th>
                   <th>Trạng thái</th>
+                  <th>Bàn giao</th>
                   <th>Thao tác</th>
                 </tr>
               </thead>
@@ -319,13 +562,13 @@ function App() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="empty">
+                    <td colSpan={8} className="empty">
                       Đang tải dữ liệu...
                     </td>
                   </tr>
                 ) : accounts.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="empty">
+                    <td colSpan={8} className="empty">
                       Không tìm thấy tài khoản
                     </td>
                   </tr>
@@ -353,11 +596,30 @@ function App() {
                           className={
                             account.status === 'ACTIVE'
                               ? 'status-badge active'
-                              : 'status-badge inactive'
+                              : account.status === 'LOCKED'
+                                ? 'status-badge locked'
+                                : 'status-badge inactive'
                           }
                         >
-                          {account.status === 'ACTIVE' ? 'Đang hoạt động' : 'Ngừng hoạt động'}
+                          {account.status === 'LOCKED'
+                            ? 'Đã khóa'
+                            : account.status === 'ACTIVE'
+                              ? 'Đang hoạt động'
+                              : 'Ngừng hoạt động'}
                         </span>
+                      </td>
+
+                      <td>
+                        {account.status === 'LOCKED' && account.classesToHandover.length > 0 ? (
+                          <div className="handover-alert" role="alert">
+                            <strong>Cần bàn giao:</strong> {account.classesToHandover.join(', ')}
+                          </div>
+                        ) : account.classesToHandover.length > 0 ? (
+                          account.classesToHandover.join(', ')
+                        ) : '—'}
+                        {account.status === 'LOCKED' && account.lockReason && (
+                          <div className="lock-reason">Lý do: {account.lockReason}</div>
+                        )}
                       </td>
 
                       <td>
@@ -370,6 +632,25 @@ function App() {
                           >
                             Sửa
                           </button>
+
+                          {account.status === 'LOCKED' ? (
+                            <button
+                              className="unlock-button"
+                              onClick={() => void handleUnlockAccount(account.id)}
+                            >
+                              Mở khóa
+                            </button>
+                          ) : account.username !== currentAccount.username && (
+                            <button
+                              className="lock-button"
+                              onClick={() => {
+                                setSelectedAccount(account)
+                                setLockReason('')
+                              }}
+                            >
+                              Khóa
+                            </button>
+                          )}
 
                           <button
                             className="delete-button"
@@ -545,6 +826,48 @@ function App() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+      {selectedAccount && (
+        <div className="modal-overlay">
+          <section className="modal lock-modal" role="dialog" aria-modal="true" aria-labelledby="lock-heading">
+            <div className="modal-header">
+              <div>
+                <h2 id="lock-heading">Khóa tài khoản nhân sự</h2>
+                <p>{selectedAccount.fullName} ({selectedAccount.username}) sẽ bị từ chối truy cập.</p>
+              </div>
+              <button className="close-button" aria-label="Đóng" onClick={() => setSelectedAccount(null)}>×</button>
+            </div>
+            {selectedAccount.classesToHandover.length > 0 && (
+              <div className="handover-alert modal-handover" role="alert">
+                <strong>Cần bàn giao {selectedAccount.classesToHandover.length} lớp:</strong>
+                <ul>
+                  {selectedAccount.classesToHandover.map((className) => <li key={className}>{className}</li>)}
+                </ul>
+              </div>
+            )}
+            <div className="lock-reason-field">
+              <label htmlFor="lock-reason">Lý do khóa (bắt buộc)</label>
+              <textarea
+                id="lock-reason"
+                required
+                maxLength={1000}
+                rows={4}
+                value={lockReason}
+                onChange={(event) => setLockReason(event.target.value)}
+              />
+            </div>
+            <div className="modal-footer">
+              <button className="cancel-button" onClick={() => setSelectedAccount(null)}>Hủy</button>
+              <button
+                className="lock-button"
+                disabled={!lockReason.trim()}
+                onClick={() => void handleLockAccount()}
+              >
+                Khóa và thu hồi phiên
+              </button>
+            </div>
+          </section>
         </div>
       )}
     </div>

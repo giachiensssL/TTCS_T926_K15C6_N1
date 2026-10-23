@@ -3,7 +3,11 @@ package com.ttcs.ttcsbackend.controller;
 import com.ttcs.ttcsbackend.dto.AccountResponse;
 import com.ttcs.ttcsbackend.entity.Account;
 import com.ttcs.ttcsbackend.service.AccountService;
+import com.ttcs.ttcsbackend.dto.LockAccountRequest;
+import jakarta.validation.Valid;
+import org.springframework.security.core.Authentication;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -58,7 +62,12 @@ public class AccountController {
     public ResponseEntity<AccountResponse> updateAccount(
             @PathVariable Long id,
             @RequestBody Account account) {
-        Account updatedAccount = accountService.updateAccount(id, account);
+        Account updatedAccount;
+        try {
+            updatedAccount = accountService.updateAccount(id, account);
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.badRequest().build();
+        }
 
         if (updatedAccount == null) {
             return ResponseEntity.notFound().build();
@@ -86,6 +95,40 @@ public class AccountController {
                 account.getEmail(),
                 account.getFullName(),
                 account.getRole(),
-                account.getStatus());
+                account.getStatus(),
+                account.getLockReason(),
+                account.getLockedAt(),
+                accountService.getClassesToHandover(account.getId()));
+    }
+
+    @PatchMapping("/{id}/lock")
+    public ResponseEntity<?> lockAccount(
+            @PathVariable Long id,
+            @Valid @RequestBody LockAccountRequest request,
+            Authentication authentication) {
+        try {
+            return ResponseEntity.ok(toResponse(
+                    accountService.lockAccount(id, authentication.getName(), request.reason())));
+        } catch (AccountService.AccountNotFoundException exception) {
+            return ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.badRequest().body(exception.getMessage());
+        } catch (IllegalStateException exception) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(exception.getMessage());
+        }
+    }
+
+    @PatchMapping("/{id}/unlock")
+    public ResponseEntity<?> unlockAccount(
+            @PathVariable Long id,
+            Authentication authentication) {
+        try {
+            return ResponseEntity.ok(toResponse(
+                    accountService.unlockAccount(id, authentication.getName())));
+        } catch (AccountService.AccountNotFoundException exception) {
+            return ResponseEntity.notFound().build();
+        } catch (IllegalStateException exception) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(exception.getMessage());
+        }
     }
 }

@@ -2,6 +2,8 @@ package com.ttcs.ttcsbackend.entity;
 
 import jakarta.persistence.*;
 
+import java.time.Instant;
+
 @Entity
 @Table(name = "accounts")
 public class Account {
@@ -21,6 +23,11 @@ public class Account {
     private String role;
 
     private String status;
+
+    @Column(length = 1000)
+    private String lockReason;
+
+    private Instant lockedAt;
 
     public Account() {
     }
@@ -79,5 +86,21 @@ public class Account {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getLockReason() {
+        return lockReason;
+    }
+
+    public void setLockReason(String lockReason) {
+        this.lockReason = lockReason;
+    }
+
+    public Instant getLockedAt() {
+        return lockedAt;
+    }
+
+    public void setLockedAt(Instant lockedAt) {
+        this.lockedAt = lockedAt;
     }
 }

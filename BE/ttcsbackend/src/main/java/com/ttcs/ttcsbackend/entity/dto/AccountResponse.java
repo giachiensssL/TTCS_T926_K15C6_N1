@@ -1,5 +1,8 @@
 package com.ttcs.ttcsbackend.dto;
 
+import java.time.Instant;
+import java.util.List;
+
 public class AccountResponse {
 
     private Long id;
@@ -8,6 +11,9 @@ public class AccountResponse {
     private String fullName;
     private String role;
     private String status;
+    private String lockReason;
+    private Instant lockedAt;
+    private List<String> classesToHandover;
 
     public AccountResponse() {
     }
@@ -18,13 +24,19 @@ public class AccountResponse {
             String email,
             String fullName,
             String role,
-            String status) {
+            String status,
+            String lockReason,
+            Instant lockedAt,
+            List<String> classesToHandover) {
         this.id = id;
         this.username = username;
         this.email = email;
         this.fullName = fullName;
         this.role = role;
         this.status = status;
+        this.lockReason = lockReason;
+        this.lockedAt = lockedAt;
+        this.classesToHandover = classesToHandover;
     }
 
     public Long getId() {
@@ -49,5 +61,17 @@ public class AccountResponse {
 
     public String getStatus() {
         return status;
+    }
+
+    public String getLockReason() {
+        return lockReason;
+    }
+
+    public Instant getLockedAt() {
+        return lockedAt;
+    }
+
+    public List<String> getClassesToHandover() {
+        return classesToHandover;
     }
 }
