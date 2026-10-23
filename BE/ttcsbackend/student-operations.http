@@ -1,0 +1,46 @@
+@baseUrl = http://localhost:8080
+@studentId = 1
+@sourceEnrollmentId = 1
+@effectiveDate = 2026-11-01
+
+### View student profile and operation history
+GET {{baseUrl}}/api/students/{{studentId}}
+
+### View attendance roster on the effective date
+GET {{baseUrl}}/api/students/attendance-roster?date={{effectiveDate}}&classCode=JAVA-01
+
+### Reserve a student (run independently from other operation examples)
+POST {{baseUrl}}/api/students/{{studentId}}/operations
+Content-Type: application/json
+
+{
+  "type": "BAO_LUU",
+  "reason": "Bảo lưu theo đề nghị của học viên",
+  "effectiveDate": "{{effectiveDate}}"
+}
+
+### Transfer a student (use an active source enrollment ID)
+POST {{baseUrl}}/api/students/{{studentId}}/operations
+Content-Type: application/json
+
+{
+  "type": "CHUYEN_LOP",
+  "reason": "Chuyển lớp theo lịch học mới",
+  "effectiveDate": "{{effectiveDate}}",
+  "sourceEnrollmentId": {{sourceEnrollmentId}},
+  "targetClassCode": "JAVA-02",
+  "targetClassName": "Lớp Java mới",
+  "targetTeacherName": "Giảng viên mới",
+  "targetSchedule": "T2-T4",
+  "targetRoom": "P202"
+}
+
+### Withdraw a student (run independently from other operation examples)
+POST {{baseUrl}}/api/students/{{studentId}}/operations
+Content-Type: application/json
+
+{
+  "type": "THOI_HOC",
+  "reason": "Học viên đề nghị thôi học",
+  "effectiveDate": "{{effectiveDate}}"
+}

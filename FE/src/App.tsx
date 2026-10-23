@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import StudentManagementView from './pages/StudentManagementView'
 import './App.css'
 
 type Account = {
@@ -29,6 +30,7 @@ const emptyForm: AccountForm = {
 }
 
 function App() {
+  const [activeTab, setActiveTab] = useState<'students' | 'accounts'>('accounts')
   const [accounts, setAccounts] = useState<Account[]>([])
   const [username, setUsername] = useState('')
   const [role, setRole] = useState('')
@@ -204,18 +206,44 @@ function App() {
     <div className="app">
       <header className="header">
         <div>
-          <h1>Quản lý người dùng</h1>
-          <p>Quản lý tài khoản và phân quyền hệ thống</p>
+          <h1>{activeTab === 'students' ? 'Quản lý học viên' : 'Quản lý người dùng'}</h1>
+          <p>{activeTab === 'students'
+            ? 'Theo dõi hồ sơ, thao tác học viên và lịch sử lớp học'
+            : 'Quản lý tài khoản và phân quyền hệ thống'}</p>
         </div>
 
-        <button
-          className="primary-button"
-          onClick={openCreateModal}
-        >
-          + Thêm tài khoản
-        </button>
+        <div className="header-actions">
+          <nav className="page-tabs" aria-label="Phân hệ quản lý">
+            <button
+              type="button"
+              className={activeTab === 'students' ? 'page-tab active' : 'page-tab'}
+              aria-current={activeTab === 'students' ? 'page' : undefined}
+              onClick={() => setActiveTab('students')}
+            >
+              Học viên
+            </button>
+            <button
+              type="button"
+              className={activeTab === 'accounts' ? 'page-tab active' : 'page-tab'}
+              aria-current={activeTab === 'accounts' ? 'page' : undefined}
+              onClick={() => setActiveTab('accounts')}
+            >
+              Tài khoản
+            </button>
+          </nav>
+          {activeTab === 'accounts' && (
+            <button className="primary-button" onClick={openCreateModal}>
+              + Thêm tài khoản
+            </button>
+          )}
+        </div>
       </header>
 
+      {activeTab === 'students' ? (
+        <main className="container">
+          <StudentManagementView />
+        </main>
+      ) : (
       <main className="container">
         <section className="filter-card">
           <div className="filter-item search-item">
@@ -418,6 +446,7 @@ function App() {
           </div>
         </section>
       </main>
+      )}
 
       {showModal && (
         <div className="modal-overlay">
